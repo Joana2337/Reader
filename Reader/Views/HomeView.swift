@@ -1,5 +1,3 @@
-
-
 /// HomeView serves as the main interface for the Reader app
 /// Responsibilities:
 /// - Manages book search functionality
@@ -79,7 +77,7 @@ struct HomeView: View {
                     
                     // TODO: Implement WantToReadView
                     // Want to Read Section - Temporarily disabled
-                    /*
+                    
                     NavigationLink {
                         WantToReadView()
                     } label: {
@@ -89,7 +87,7 @@ struct HomeView: View {
                             color: .green
                         )
                     }
-                    */
+                    
                 }
                 .padding()
             }
@@ -342,4 +340,5 @@ struct HomeView_Previews: PreviewProvider {
     }
 }
 
+//things to fix..currently reading and want to read needs to be an add button. All what there're to do is let me either add a book up to either currently reading or want to read. search bar does list books alright but clicking on it does nothing - its supposed to show authors info and book info if I click on them.
 //things to fix..currently reading and want to read needs to be an add button. All what there're to do is let me either add a book up to either currently reading or want to read. search bar does list books alright but clicking on it does nothing - its supposed to show authors info and book info if I click on them.

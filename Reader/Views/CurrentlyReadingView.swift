@@ -2,7 +2,13 @@
 /// CurrentlyReadingView displays and manages the user's active reading list
 /// Allows users to track their reading progress for each book
 /// - Created by: Joana
-/// - 
+/// - Date: 2025-03-15
+///
+
+/// CurrentlyReadingView displays and manages the user's active reading list
+/// Allows users to track their reading progress for each book
+/// - Created by: Joana
+/// -
 
 import SwiftUI
 struct CurrentlyReadingView: View {

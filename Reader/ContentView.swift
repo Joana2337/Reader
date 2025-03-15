@@ -1,66 +1,135 @@
-//
+
 //  ContentView.swift
 //  Reader
 //  Created by Joanne on 3/3/25.
 
 
 import SwiftUI
-import SwiftData
+import CloudKit
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
+        TabView {
+            NavigationStack {
+                HomeView()
             }
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
-            .toolbar {
-#if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-#endif
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
+            .tabItem {
+                Label("Search", systemImage: "magnifyingglass")
             }
-        } detail: {
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+            
+            NavigationStack {
+                CurrentlyReadingView()
+                    .navigationTitle("Currently Reading")
+            }
+            .tabItem {
+                Label("Reading", systemImage: "book.fill")
+            }
+            
+            NavigationStack {
+                WantToReadView()
+                    .navigationTitle("Want to Read")
+            }
+            .tabItem {
+                Label("Want to Read", systemImage: "bookmark.fill")
+            }
+            
+            NavigationStack {
+                ProfileView()
+                    .navigationTitle("Profile")
+            }
+            .tabItem {
+                Label("Profile", systemImage: "person.fill")
             }
         }
     }
 }
 
+struct ProfileView: View {
+    var body: some View {
+        List {
+            Section("Reading Statistics") {
+                StatRow(title: "Books Read", value: "0")
+                StatRow(title: "Currently Reading", value: "0")
+                StatRow(title: "Want to Read", value: "0")
+            }
+            
+            Section("Account") {
+                NavigationLink {
+                    SettingsView()
+                } label: {
+                    Label("Settings", systemImage: "gear")
+                }
+                
+                NavigationLink {
+                    AboutView()
+                } label: {
+                    Label("About", systemImage: "info.circle")
+                }
+            }
+        }
+    }
+}
+
+struct StatRow: View {
+    let title: String
+    let value: String
+    
+    var body: some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Text(value)
+                .foregroundColor(.secondary)
+        }
+    }
+}
+
+struct SettingsView: View {
+    @AppStorage("darkMode") private var darkMode = false
+    @AppStorage("notificationsEnabled") private var notificationsEnabled = true
+    
+    var body: some View {
+        List {
+            Section("Appearance") {
+                Toggle("Dark Mode", isOn: $darkMode)
+            }
+            
+            Section("Notifications") {
+                Toggle("Enable Notifications", isOn: $notificationsEnabled)
+            }
+        }
+        .navigationTitle("Settings")
+    }
+}
+
+struct AboutView: View {
+    var body: some View {
+        List {
+            Section {
+                VStack(spacing: 20) {
+                    Image(systemName: "books.vertical.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.blue)
+                    
+                    Text("Reader App")
+                        .font(.title)
+                        .bold()
+                    
+                    Text("Version 1.0.0")
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical)
+            }
+            
+            Section("Developer") {
+                LabeledContent("Created by", value: "Joana")
+            }
+        }
+        .navigationTitle("About")
+    }
+}
+
 #Preview {
     ContentView()
-        //.modelContainer(for: Item.self, inMemory: true)
-        .modelContainer(for: Item.self, inMemory: false) //store data locally without Cloudkit sycning.
 }
