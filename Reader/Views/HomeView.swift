@@ -8,6 +8,7 @@
 
 
 import SwiftUI
+
 struct HomeView: View {
     // MARK: - State Management
     /// Tracks the current search input from user
@@ -22,24 +23,22 @@ struct HomeView: View {
     @State private var showingError = false
     /// Controls visibility of success alert
     @State private var showingSuccess = false
+    /// Triggers UI refresh when books are added
+    @State private var refreshTrigger = false
     
     // MARK: - View Body
     var body: some View {
         NavigationView {
             VStack {
                 // MARK: - Search Interface
-                /// SearchBar component handles user input and search triggering
                 SearchBar(text: $searchText, onCommit: performSearch)
                     .padding()
                 
                 // MARK: - Dynamic Content Area
-                /// ZStack manages different view states (loading/results/empty)
                 ZStack {
                     if isLoading {
-                        // Loading State
                         ProgressView("Searching...")
                     } else if !books.isEmpty {
-                        // Search Results Display
                         List(books) { book in
                             BookRow(book: book,
                                   onCurrentlyReading: { addToCurrentlyReading(book) },
@@ -47,13 +46,12 @@ struct HomeView: View {
                             )
                         }
                         .listStyle(PlainListStyle())
+                        .id(refreshTrigger) // Force list refresh when books are added
                     } else if !searchText.isEmpty {
-                        // No Results State
                         ContentUnavailableView("No Results",
                             systemImage: "magnifyingglass",
                             description: Text("Try searching for another book"))
                     } else {
-                        // Initial State
                         ContentUnavailableView("Search Books",
                             systemImage: "book.circle",
                             description: Text("Enter a book title or author to begin"))
@@ -62,9 +60,7 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
                 // MARK: - Quick Access Navigation
-                /// Bottom navigation section for accessing reading lists
                 VStack(spacing: 16) {
-                    // Currently Reading Section
                     NavigationLink {
                         CurrentlyReadingView()
                     } label: {
@@ -75,9 +71,6 @@ struct HomeView: View {
                         )
                     }
                     
-                    // TODO: Implement WantToReadView
-                    // Want to Read Section - Temporarily disabled
-                    
                     NavigationLink {
                         WantToReadView()
                     } label: {
@@ -87,12 +80,10 @@ struct HomeView: View {
                             color: .green
                         )
                     }
-                    
                 }
                 .padding()
             }
             .navigationTitle("Reader")
-            // MARK: - Alert Handlers
             .alert("Error", isPresented: $showingError) {
                 Button("OK", role: .cancel) { }
             } message: {
@@ -107,31 +98,68 @@ struct HomeView: View {
     }
     
     // MARK: - Book Management Methods
-    /// Adds a book to Currently Reading list
-    /// - Parameter book: The book to be added
     private func addToCurrentlyReading(_ book: Book) {
+        print("Attempting to add to Currently Reading: \(book.volumeInfo.title)")
+        
         // Check if book is already in the list
         let currentBooks = Book.getLocalBooks(listType: .currentlyReading)
         if currentBooks.contains(where: { $0.id == book.id }) {
             errorMessage = "This book is already in your Currently Reading list"
             showingError = true
+            print("Book already in Currently Reading list")
             return
         }
         
-        // Save the book
+        // Remove from Want to Read if it exists there
+        Book.removeFromLocal(book, listType: .wantToRead)
+        
+        // Save to Currently Reading
         Book.saveLocally(book, listType: .currentlyReading)
+        
+        // Update UI
+        refreshTrigger.toggle()
         showingSuccess = true
+        print("Successfully added to Currently Reading")
+        
+        // Debug: Verify storage
+        let updatedBooks = Book.getLocalBooks(listType: .currentlyReading)
+        print("Current number of books in Currently Reading: \(updatedBooks.count)")
     }
     
-    /// Adds a book to Want to Read list
-    /// - Parameter book: The book to be added
     private func addToWantToRead(_ book: Book) {
+        print("Attempting to add to Want to Read: \(book.volumeInfo.title)")
+        
+        // Check if book is already in either list
+        let wantToReadBooks = Book.getLocalBooks(listType: .wantToRead)
+        if wantToReadBooks.contains(where: { $0.id == book.id }) {
+            errorMessage = "This book is already in your Want to Read list"
+            showingError = true
+            print("Book already in Want to Read list")
+            return
+        }
+        
+        let currentlyReadingBooks = Book.getLocalBooks(listType: .currentlyReading)
+        if currentlyReadingBooks.contains(where: { $0.id == book.id }) {
+            errorMessage = "This book is already in your Currently Reading list"
+            showingError = true
+            print("Book already in Currently Reading list")
+            return
+        }
+        
+        // Save to Want to Read
         Book.saveLocally(book, listType: .wantToRead)
+        
+        // Update UI
+        refreshTrigger.toggle()
         showingSuccess = true
+        print("Successfully added to Want to Read")
+        
+        // Debug: Verify storage
+        let updatedBooks = Book.getLocalBooks(listType: .wantToRead)
+        print("Current number of books in Want to Read: \(updatedBooks.count)")
     }
     
     // MARK: - Search Implementation
-    /// Performs book search using Google Books API
     private func performSearch() {
         guard !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
@@ -163,17 +191,13 @@ struct HomeView: View {
     }
 }
 
+
 // MARK: - Supporting Views
-/// Displays a single book in the search results list with action buttons
 struct BookRow: View {
-    /// The book to display
     let book: Book
-    /// Callback when user wants to add to Currently Reading
     let onCurrentlyReading: () -> Void
-    /// Callback when user wants to add to Want to Read
     let onWantToRead: () -> Void
     
-    // Add state for button press animation
     @State private var isPressingCurrently = false
     @State private var isPressingWantTo = false
     
@@ -193,7 +217,6 @@ struct BookRow: View {
                     .frame(width: 60, height: 90)
                     .cornerRadius(6)
                 } else {
-                    // Placeholder for books without covers
                     Rectangle()
                         .fill(Color.gray.opacity(0.3))
                         .frame(width: 60, height: 90)
@@ -222,7 +245,10 @@ struct BookRow: View {
                         Spacer()
                         
                         // Currently Reading Button
-                        Button(action: onCurrentlyReading) {
+                        Button {
+                            print("Currently Reading button tapped")
+                            onCurrentlyReading()
+                        } label: {
                             HStack {
                                 Text("Currently Reading")
                                 Image(systemName: "plus.circle.fill")
@@ -236,23 +262,18 @@ struct BookRow: View {
                                     .stroke(Color.blue, lineWidth: 1)
                             )
                         }
+                        .buttonStyle(PlainButtonStyle())
                         .scaleEffect(isPressingCurrently ? 0.95 : 1.0)
                         .font(.caption)
                         .foregroundColor(.blue)
-                        .pressEvents {
-                            withAnimation(.easeInOut(duration: 0.1)) {
-                                isPressingCurrently = true
-                            }
-                        } onRelease: {
-                            withAnimation(.easeInOut(duration: 0.1)) {
-                                isPressingCurrently = false
-                            }
-                        }
                         
                         Spacer()
                         
-                        // Want to Read Button (Temporarily visible but will be implemented later)
-                        Button(action: onWantToRead) {
+                        // Want to Read Button
+                        Button {
+                            print("Want to Read button tapped")
+                            onWantToRead()
+                        } label: {
                             HStack {
                                 Text("Want to Read")
                                 Image(systemName: "plus.circle.fill")
@@ -266,18 +287,10 @@ struct BookRow: View {
                                     .stroke(Color.green, lineWidth: 1)
                             )
                         }
+                        .buttonStyle(PlainButtonStyle())
                         .scaleEffect(isPressingWantTo ? 0.95 : 1.0)
                         .font(.caption)
                         .foregroundColor(.green)
-                        .pressEvents {
-                            withAnimation(.easeInOut(duration: 0.1)) {
-                                isPressingWantTo = true
-                            }
-                        } onRelease: {
-                            withAnimation(.easeInOut(duration: 0.1)) {
-                                isPressingWantTo = false
-                            }
-                        }
                     }
                     .padding(.top, 8)
                 }
@@ -287,13 +300,9 @@ struct BookRow: View {
     }
 }
 
-/// Quick access button for navigation
 struct QuickAccessButton: View {
-    /// The title of the button
     let title: String
-    /// SF Symbol name for the icon
     let icon: String
-    /// Color for the icon
     let color: Color
     
     var body: some View {
@@ -315,10 +324,6 @@ struct QuickAccessButton: View {
 
 // MARK: - Press Animation Extension
 extension View {
-    /// Adds press animation to a view
-    /// - Parameters:
-    ///   - onPress: Callback when press begins
-    ///   - onRelease: Callback when press ends
     func pressEvents(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
         self
             .gesture(
@@ -339,6 +344,3 @@ struct HomeView_Previews: PreviewProvider {
         HomeView()
     }
 }
-
-//things to fix..currently reading and want to read needs to be an add button. All what there're to do is let me either add a book up to either currently reading or want to read. search bar does list books alright but clicking on it does nothing - its supposed to show authors info and book info if I click on them.
-//things to fix..currently reading and want to read needs to be an add button. All what there're to do is let me either add a book up to either currently reading or want to read. search bar does list books alright but clicking on it does nothing - its supposed to show authors info and book info if I click on them.
