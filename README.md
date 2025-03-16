@@ -1,39 +1,110 @@
 # 📚 Reader App
 
-A modern iOS application for tracking your reading journey, managing your book collections, and discovering new books to read.
+A modern iOS reading tracker built with SwiftUI that helps you manage your reading journey. Search for books using the Google Books API, track your reading progress with actual page numbers, and manage your reading lists.
 
 ## ✨ Features
 
-- [x] Search books using Google Books API
-- [x] Manage currently reading list
-  - [x] Add books to currently reading
-  - [x] Track reading progress
+### Implemented
+- [x] Book Search & Discovery
+  - [x] Search using Google Books API
+  - [x] View book details (title, author, description)
+  - [x] See actual page counts for books
+  - [x] View book cover images
+
+- [x] Currently Reading
+  - [x] Add books to currently reading list
+  - [x] Track reading progress by page numbers
+  - [x] View progress as both pages and percentage
   - [x] Remove books from list
-- [ ] Want to read functionality (Coming soon)
-  - [ ] Save books for later
-  - [ ] Organize reading wishlist
+  - [x] View all currently reading books in one place
 
-## 🛠 Technical Stack
+- [x] Want to Read
+  - [x] Save books for later reading
+  - [x] Manage reading wishlist
+  - [x] Move books between lists
 
+### Technical Features
 - SwiftUI for modern UI development
-- Google Books API for book data
-- UserDefaults for local data persistence
+- Google Books API integration
+- Local data persistence using UserDefaults
 - Async/await for API calls
 - iOS 16.0+ support
 
-## 🚀 Getting Started
-
-### Prerequisites
+## 🛠 Technical Requirements
 
 - Xcode 14.0+
 - iOS 16.0+
 - Swift 5.5+
+- Google Books API Key
 
-### Installation
+## 📱 Installation
 
 1. Clone the repository
 ```bash
 git clone https://github.com/Joana2337/Reader.git
+```
+
+2. Open `Reader.xcodeproj` in Xcode
+
+3. Add your Google Books API key in `APIKeys.swift`:
+```swift
+struct APIKeys {
+    static let googleBooksAPI = "YOUR_API_KEY_HERE"
+}
+```
+
+4. Build and run the project
+
+## 📖 Usage
+
+### Search Books
+- Use the search bar to find books by title or author
+- View detailed book information including:
+  - Cover image
+  - Title and author
+  - Description
+  - Page count
+
+### Track Your Reading
+- Add books to "Currently Reading"
+- Track progress by entering current page number
+- View progress bar and completion percentage
+- Remove books when finished
+
+### Plan Future Reading
+- Save interesting books to "Want to Read"
+- Build your reading wishlist
+- Move books to "Currently Reading" when ready
+
+## 🗂 Project Structure
+
+```
+Reader/
+├── Views/
+│   ├── HomeView.swift         # Search and main navigation
+│   ├── CurrentlyReadingView.swift
+│   ├── WantToReadView.swift
+│   └── Components/           # Reusable UI components
+├── Models/
+│   └── BookModel.swift       # Data models and API interfaces
+├── Resources/
+└── Support/
+    └── APIKeys.swift         # API configuration
+```
+
+## 🔒 Security
+
+- API keys are stored securely
+- User data is persisted locally
+- HTTPS for all API requests
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome!
+
+---
+
+Made with 📚 by [Joana2337](https://github.com/Joana2337)git clone https://github.com/Joana2337/Reader.git
 ```
 
 2. Open `Reader.xcodeproj` in Xcode
@@ -61,7 +132,7 @@ enum APIKeys {
    - Remove books when finished
    - View all currently reading books in one place
 
-3. **Want to Read (Coming Soon)**
+3. **Want to Read**
    - Save books you want to read later
    - Build your reading wishlist
 
