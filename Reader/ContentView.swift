@@ -1,7 +1,15 @@
 
-//  ContentView.swift
-//  Reader
-//  Created by Joanne on 3/3/25.
+/// ContentView.swift
+/// Reader
+/// Created by Joanne on 3/3/25.
+/// Refrences:
+/// Google Books API: https://developers.google.com/books/docs/v1/getting_started
+/// Local Data Persistence using UserDefaults( Used for local data persistence.):https://developer.apple.com/documentation/foundation/userdefaults
+/// Async/Await for API Calls: https://docs.swift.org/swift-book/LanguageGuide/Concurrency.html
+/// Swift's Codable Protocols: https://developer.apple.com/documentation/swift/codable
+/// URLSession: https://developer.apple.com/documentation/foundation/urlsession
+
+
 
 import SwiftUI
 
