@@ -4,15 +4,16 @@
 //  Created by Joanne on 3/3/25.
 
 import SwiftUI
-import CloudKit
 
 @main
 struct ReaderApp: App {
-    @UIApplicationDelegateAdaptor private var appDelegate: AppDelegate
+    // Initialize persistence controller
+    let persistenceController = PersistenceController.shared
     
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }
 }

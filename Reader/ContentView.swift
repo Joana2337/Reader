@@ -10,11 +10,14 @@
 /// URLSession: https://developer.apple.com/documentation/foundation/urlsession
 
 
-
 import SwiftUI
+import CoreData
 
 /// Main view controller for the Reader app that manages the tab-based navigation
 struct ContentView: View {
+    // Add environment object for CoreData
+    @Environment(\.managedObjectContext) private var viewContext
+    
     var body: some View {
         // Main tab container that handles switching between different sections of the app
         TabView {
@@ -50,10 +53,13 @@ struct ContentView: View {
                 Label("Want to Read", systemImage: "bookmark.fill")
             }
         }
+        // Add the environment modifier at the TabView level so all child views have access
+        .environment(\.managedObjectContext, viewContext)
     }
 }
 
 // MARK: - Preview
 #Preview {
     ContentView()
+        .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }

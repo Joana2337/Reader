@@ -1,5 +1,4 @@
 
-
 import SwiftUI
 
 struct SearchBar: View {
@@ -12,7 +11,6 @@ struct SearchBar: View {
                 .foregroundColor(.gray)
             
             TextField("Search books...", text: $text)
-                .textFieldStyle(PlainTextFieldStyle())
                 .onSubmit(onCommit)
             
             if !text.isEmpty {
@@ -28,9 +26,4 @@ struct SearchBar: View {
         .background(Color(.systemGray6))
         .cornerRadius(10)
     }
-}
-
-#Preview {
-    SearchBar(text: .constant(""), onCommit: {})
-        .padding()
 }

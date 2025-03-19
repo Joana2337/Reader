@@ -1,28 +1,28 @@
+//
+//  Book.swift
+//  Reader
+//  Created by Joanne on 3/18/25.
 
+// This handles Google Books API data
 import Foundation
 
-// Google Books API Models
-struct GoogleBookResult: Codable {  // Changed from BookResult to GoogleBookResult
-    let items: [GoogleBook]
-}
-
-struct GoogleBook: Identifiable, Codable {
+struct Book: Identifiable, Codable {
     let id: String
-    let volumeInfo: GoogleVolumeInfo
+    let volumeInfo: VolumeInfo
 }
 
-struct GoogleVolumeInfo: Codable {
+struct VolumeInfo: Codable {
     let title: String
     let authors: [String]?
     let description: String?
-    let imageLinks: GoogleImageLinks?
+    let imageLinks: ImageLinks?
     
     var authorDisplay: String {
         authors?.joined(separator: ", ") ?? "Unknown Author"
     }
 }
 
-struct GoogleImageLinks: Codable {
+struct ImageLinks: Codable {
     let smallThumbnail: String?
     let thumbnail: String?
     
@@ -31,4 +31,8 @@ struct GoogleImageLinks: Codable {
         let secureURL = thumbnail.replacingOccurrences(of: "http://", with: "https://")
         return URL(string: secureURL)
     }
+}
+
+struct BookResult: Codable {
+    let items: [Book]
 }

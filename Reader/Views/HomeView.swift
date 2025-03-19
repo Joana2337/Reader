@@ -5,48 +5,36 @@
 /// - Provides quick access to reading lists
 /// - Handles error and success states
 /// - Created by: Joana
-
-
 import SwiftUI
+import CoreData
 
 struct HomeView: View {
-    // MARK: - State Management
-    /// Tracks the current search input from user
+    @Environment(\.managedObjectContext) private var viewContext
     @State private var searchText = ""
-    /// Stores the list of books returned from search
-    @State private var books: [Book] = []
-    /// Controls loading state during API calls
+    @State private var books: [GoogleBook] = []
     @State private var isLoading = false
-    /// Stores error messages for display
     @State private var errorMessage: String?
-    /// Controls visibility of error alert
     @State private var showingError = false
-    /// Controls visibility of success alert
     @State private var showingSuccess = false
-    /// Triggers UI refresh when books are added
-    @State private var refreshTrigger = false
     
-    // MARK: - View Body
     var body: some View {
         NavigationView {
             VStack {
-                // MARK: - Search Interface
                 SearchBar(text: $searchText, onCommit: performSearch)
                     .padding()
                 
-                // MARK: - Dynamic Content Area
                 ZStack {
                     if isLoading {
                         ProgressView("Searching...")
                     } else if !books.isEmpty {
                         List(books) { book in
-                            BookRow(book: book,
-                                  onCurrentlyReading: { addToCurrentlyReading(book) },
-                                  onWantToRead: { addToWantToRead(book) }
+                            SearchResultRow(
+                                book: book,
+                                onCurrentlyReading: { addToCurrentlyReading(book) },
+                                onWantToRead: { addToWantToRead(book) }
                             )
                         }
                         .listStyle(PlainListStyle())
-                        .id(refreshTrigger) // Force list refresh when books are added
                     } else if !searchText.isEmpty {
                         ContentUnavailableView("No Results",
                             systemImage: "magnifyingglass",
@@ -59,11 +47,8 @@ struct HomeView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 
-                // MARK: - Quick Access Navigation
                 VStack(spacing: 16) {
-                    NavigationLink {
-                        CurrentlyReadingView()
-                    } label: {
+                    NavigationLink(destination: CurrentlyReadingView()) {
                         QuickAccessButton(
                             title: "Currently Reading",
                             icon: "book.fill",
@@ -71,9 +56,7 @@ struct HomeView: View {
                         )
                     }
                     
-                    NavigationLink {
-                        WantToReadView()
-                    } label: {
+                    NavigationLink(destination: WantToReadView()) {
                         QuickAccessButton(
                             title: "Want to Read",
                             icon: "bookmark.fill",
@@ -97,84 +80,67 @@ struct HomeView: View {
         }
     }
     
-    // MARK: - Book Management Methods
-    private func addToCurrentlyReading(_ book: Book) {
-        print("Attempting to add to Currently Reading: \(book.volumeInfo.title)")
+    private func addToCurrentlyReading(_ book: GoogleBook) {
+        let fetchRequest = ReaderBook.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "id == %@", book.id)
         
-        // Check if book is already in the list
-        let currentBooks = Book.getLocalBooks(listType: .currentlyReading)
-        if currentBooks.contains(where: { $0.id == book.id }) {
-            errorMessage = "This book is already in your Currently Reading list"
+        do {
+            let existingBooks = try viewContext.fetch(fetchRequest)
+            if !existingBooks.isEmpty {
+                errorMessage = "This book is already in your library"
+                showingError = true
+                return
+            }
+            
+            let _ = ReaderBook.from(googleBook: book, context: viewContext, listType: .currentlyReading)
+            try viewContext.save()
+            showingSuccess = true
+            
+        } catch {
+            errorMessage = error.localizedDescription
             showingError = true
-            print("Book already in Currently Reading list")
-            return
         }
-        
-        // Remove from Want to Read if it exists there
-        Book.removeFromLocal(book, listType: .wantToRead)
-        
-        // Save to Currently Reading
-        Book.saveLocally(book, listType: .currentlyReading)
-        
-        // Update UI
-        refreshTrigger.toggle()
-        showingSuccess = true
-        print("Successfully added to Currently Reading")
-        
-        // Debug: Verify storage
-        let updatedBooks = Book.getLocalBooks(listType: .currentlyReading)
-        print("Current number of books in Currently Reading: \(updatedBooks.count)")
     }
     
-    private func addToWantToRead(_ book: Book) {
-        print("Attempting to add to Want to Read: \(book.volumeInfo.title)")
+    private func addToWantToRead(_ book: GoogleBook) {
+        let fetchRequest = ReaderBook.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "id == %@", book.id)
         
-        // Check if book is already in either list
-        let wantToReadBooks = Book.getLocalBooks(listType: .wantToRead)
-        if wantToReadBooks.contains(where: { $0.id == book.id }) {
-            errorMessage = "This book is already in your Want to Read list"
+        do {
+            let existingBooks = try viewContext.fetch(fetchRequest)
+            if !existingBooks.isEmpty {
+                errorMessage = "This book is already in your library"
+                showingError = true
+                return
+            }
+            
+            let _ = ReaderBook.from(googleBook: book, context: viewContext, listType: .wantToRead)
+            try viewContext.save()
+            showingSuccess = true
+            
+        } catch {
+            errorMessage = error.localizedDescription
             showingError = true
-            print("Book already in Want to Read list")
-            return
         }
-        
-        let currentlyReadingBooks = Book.getLocalBooks(listType: .currentlyReading)
-        if currentlyReadingBooks.contains(where: { $0.id == book.id }) {
-            errorMessage = "This book is already in your Currently Reading list"
-            showingError = true
-            print("Book already in Currently Reading list")
-            return
-        }
-        
-        // Save to Want to Read
-        Book.saveLocally(book, listType: .wantToRead)
-        
-        // Update UI
-        refreshTrigger.toggle()
-        showingSuccess = true
-        print("Successfully added to Want to Read")
-        
-        // Debug: Verify storage
-        let updatedBooks = Book.getLocalBooks(listType: .wantToRead)
-        print("Current number of books in Want to Read: \(updatedBooks.count)")
     }
     
-    // MARK: - Search Implementation
     private func performSearch() {
         guard !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
         isLoading = true
         books = []
         
+        let encodedText = searchText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        
         Task {
             do {
-                let url = "https://www.googleapis.com/books/v1/volumes?q=\(searchText.urlEncoded ?? "")"
+                let url = "https://www.googleapis.com/books/v1/volumes?q=\(encodedText)"
                 guard let searchURL = URL(string: url) else {
                     throw URLError(.badURL)
                 }
                 
                 let (data, _) = try await URLSession.shared.data(from: searchURL)
-                let results = try JSONDecoder().decode(BookResult.self, from: data)
+                let results = try JSONDecoder().decode(GoogleBookResult.self, from: data)
                 
                 await MainActor.run {
                     books = results.items
@@ -188,115 +154,6 @@ struct HomeView: View {
                 }
             }
         }
-    }
-}
-
-
-// MARK: - Supporting Views
-struct BookRow: View {
-    let book: Book
-    let onCurrentlyReading: () -> Void
-    let onWantToRead: () -> Void
-    
-    @State private var isPressingCurrently = false
-    @State private var isPressingWantTo = false
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 12) {
-                // Book Cover Image
-                if let imageURL = book.volumeInfo.imageLinks?.secureImageURL {
-                    AsyncImage(url: imageURL) { image in
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                    } placeholder: {
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.3))
-                    }
-                    .frame(width: 60, height: 90)
-                    .cornerRadius(6)
-                } else {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 60, height: 90)
-                        .cornerRadius(6)
-                }
-                
-                // Book Details
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(book.volumeInfo.title)
-                        .font(.headline)
-                        .lineLimit(2)
-                    
-                    Text(book.volumeInfo.authorDisplay)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    if let description = book.volumeInfo.description {
-                        Text(description)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .lineLimit(2)
-                    }
-                    
-                    // Action Buttons
-                    HStack {
-                        Spacer()
-                        
-                        // Currently Reading Button
-                        Button {
-                            print("Currently Reading button tapped")
-                            onCurrentlyReading()
-                        } label: {
-                            HStack {
-                                Text("Currently Reading")
-                                Image(systemName: "plus.circle.fill")
-                            }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color.blue.opacity(0.1))
-                            .cornerRadius(15)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .stroke(Color.blue, lineWidth: 1)
-                            )
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .scaleEffect(isPressingCurrently ? 0.95 : 1.0)
-                        .font(.caption)
-                        .foregroundColor(.blue)
-                        
-                        Spacer()
-                        
-                        // Want to Read Button
-                        Button {
-                            print("Want to Read button tapped")
-                            onWantToRead()
-                        } label: {
-                            HStack {
-                                Text("Want to Read")
-                                Image(systemName: "plus.circle.fill")
-                            }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color.green.opacity(0.1))
-                            .cornerRadius(15)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .stroke(Color.green, lineWidth: 1)
-                            )
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .scaleEffect(isPressingWantTo ? 0.95 : 1.0)
-                        .font(.caption)
-                        .foregroundColor(.green)
-                    }
-                    .padding(.top, 8)
-                }
-            }
-        }
-        .padding(.vertical, 8)
     }
 }
 
@@ -322,25 +179,8 @@ struct QuickAccessButton: View {
     }
 }
 
-// MARK: - Press Animation Extension
-extension View {
-    func pressEvents(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
-        self
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
-                        onPress()
-                    }
-                    .onEnded { _ in
-                        onRelease()
-                    }
-            )
-    }
-}
 
-// MARK: - Preview Provider
-struct HomeView_Previews: PreviewProvider {
-    static var previews: some View {
-        HomeView()
-    }
+#Preview {
+    HomeView()
+        .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }
