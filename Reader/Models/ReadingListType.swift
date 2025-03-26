@@ -1,7 +1,8 @@
-//
-//  ReadingListType.swift
-//  Reader
-//  Created by Joanne on 3/18/25.
+
+///  ReadingListType.swift
+///  Reader
+///  Created by Joanne on 3/18/25.
+
 import Foundation
 
 enum ReadingListType: String {

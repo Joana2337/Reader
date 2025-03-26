@@ -11,7 +11,6 @@ struct CurrentlyReadingView: View {
     @Environment(\.managedObjectContext) private var viewContext
     
     @FetchRequest(
-        entity: ReaderBook.entity(),
         sortDescriptors: [NSSortDescriptor(keyPath: \ReaderBook.title, ascending: true)],
         predicate: NSPredicate(format: "listType == %@", ReadingListType.currentlyReading.rawValue)
     ) private var books: FetchedResults<ReaderBook>
@@ -19,7 +18,30 @@ struct CurrentlyReadingView: View {
     var body: some View {
         List {
             ForEach(books, id: \.id) { book in
-                BookRow(book: book)
+                VStack(alignment: .leading) {
+                    BookRow(book: book)
+                    
+                    /// Add progress section
+                    VStack(alignment: .leading) {
+                        ProgressView(value: Double(book.currentPage), total: Double(book.pageCount))
+                        
+                        HStack {
+                            Text("Page \(Int(book.currentPage)) of \(Int(book.pageCount))")
+                            Spacer()
+                            if book.pageCount > 0 {
+                                Text("\(Int((Double(book.currentPage) / Double(book.pageCount)) * 100))%")
+                            }
+                        }
+                        .font(.caption)
+                        
+                        Button("Update Progress") {
+                            /// Show update sheet
+                            updateProgress(for: book)
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .padding(.top, 8)
+                }
             }
             .onDelete(perform: deleteBooks)
         }
@@ -31,25 +53,41 @@ struct CurrentlyReadingView: View {
         }
     }
     
-    private func deleteBooks(at offsets: IndexSet) {
-        for index in offsets {
-            let book = books[index]
-            viewContext.delete(book)
+    private func updateProgress(for book: ReaderBook) {
+        /// Show an alert to update progress
+        let alert = UIAlertController(title: "Update Progress", message: "Enter current page:", preferredStyle: .alert)
+        alert.addTextField { textField in
+            textField.keyboardType = .numberPad
+            textField.text = String(Int(book.currentPage))
         }
         
-        do {
-            try viewContext.save()
-        } catch {
-            print("Error deleting book: \(error)")
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Update", style: .default) { _ in
+            if let text = alert.textFields?.first?.text,
+               let page = Int(text) {
+                book.currentPage = Int32(min(max(0, page), Int(book.pageCount)))
+                try? viewContext.save()
+            }
+        })
+        
+        /// Present the alert
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let viewController = windowScene.windows.first?.rootViewController {
+            viewController.present(alert, animated: true)
         }
+    }
+    
+    private func deleteBooks(at offsets: IndexSet) {
+        for index in offsets {
+            viewContext.delete(books[index])
+        }
+        try? viewContext.save()
     }
 }
 
-struct CurrentlyReadingView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationView {
-            CurrentlyReadingView()
-                .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-        }
+#Preview {
+    NavigationView {
+        CurrentlyReadingView()
+            .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
     }
 }

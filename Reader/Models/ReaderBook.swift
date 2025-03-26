@@ -1,49 +1,39 @@
 //
-//  ReaderBook.swift
-//  Reader
-//  Created by Joanne on 3/18/25.
+///  ReaderBook.swift
+///  Reader
+///  Created by Joanne on 3/18/25.
 
 import Foundation
 import CoreData
 
 @objc(ReaderBook)
-public class ReaderBook: NSManagedObject, Identifiable {
+public class ReaderBook: NSManagedObject {
     @NSManaged public var id: String
     @NSManaged public var title: String
-    @NSManaged public var authors: [String]
     @NSManaged public var bookDescription: String?
     @NSManaged public var imageURL: String?
     @NSManaged public var pageCount: Int32
+    @NSManaged public var currentPage: Int32
     @NSManaged public var listType: String
+    @NSManaged public var dateAdded: Date?
+    @NSManaged private var authorsData: NSObject?
     
-    var readingListType: ReadingListType {
+    public var authors: [String] {
         get {
-            return ReadingListType(rawValue: listType) ?? .wantToRead
+            return (authorsData as? [String]) ?? []
         }
         set {
-            listType = newValue.rawValue
+            authorsData = newValue as NSObject
         }
     }
     
-    var authorDisplay: String {
-        return authors.joined(separator: ", ")
-    }
-    
-    static func from(googleBook: GoogleBook, context: NSManagedObjectContext, listType: ReadingListType) -> ReaderBook {
-        let book = ReaderBook(context: context)
-        book.id = googleBook.id
-        book.title = googleBook.volumeInfo.title
-        book.authors = googleBook.volumeInfo.authors ?? []
-        book.bookDescription = googleBook.volumeInfo.description
-        book.imageURL = googleBook.volumeInfo.imageLinks?.thumbnail?.replacingOccurrences(of: "http://", with: "https://")
-        book.pageCount = 0
-        book.listType = listType.rawValue
-        return book
+    public var authorDisplay: String {
+        return authors.isEmpty ? "Unknown Author" : authors.joined(separator: ", ")
     }
 }
 
 extension ReaderBook {
-    static var fetchRequest: NSFetchRequest<ReaderBook> {
+    @nonobjc public class func fetchRequest() -> NSFetchRequest<ReaderBook> {
         return NSFetchRequest<ReaderBook>(entityName: "ReaderBook")
     }
 }

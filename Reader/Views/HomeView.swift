@@ -5,13 +5,16 @@
 /// - Provides quick access to reading lists
 /// - Handles error and success states
 /// - Created by: Joana
+
+
+
 import SwiftUI
 import CoreData
 
 struct HomeView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @State private var searchText = ""
-    @State private var books: [GoogleBook] = []
+    @State private var books: [Book] = []  // Keep as Book
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showingError = false
@@ -80,48 +83,34 @@ struct HomeView: View {
         }
     }
     
-    private func addToCurrentlyReading(_ book: GoogleBook) {
-        let fetchRequest = ReaderBook.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "id == %@", book.id)
+    func addToCurrentlyReading(_ book: Book) {  // Keep as Book
+        let readerBook = ReaderBook(context: viewContext)
+        readerBook.id = book.id
+        readerBook.title = book.volumeInfo.title
+        readerBook.authors = book.volumeInfo.authors ?? []
+        readerBook.bookDescription = book.volumeInfo.description
+        readerBook.imageURL = book.volumeInfo.imageLinks?.thumbnail?.replacingOccurrences(of: "http://", with: "https://")
+        readerBook.pageCount = Int32(book.volumeInfo.pageCount ?? 0)
+        readerBook.currentPage = 0
+        readerBook.listType = ReadingListType.currentlyReading.rawValue
         
-        do {
-            let existingBooks = try viewContext.fetch(fetchRequest)
-            if !existingBooks.isEmpty {
-                errorMessage = "This book is already in your library"
-                showingError = true
-                return
-            }
-            
-            let _ = ReaderBook.from(googleBook: book, context: viewContext, listType: .currentlyReading)
-            try viewContext.save()
-            showingSuccess = true
-            
-        } catch {
-            errorMessage = error.localizedDescription
-            showingError = true
-        }
+        try? viewContext.save()
+        showingSuccess = true
     }
     
-    private func addToWantToRead(_ book: GoogleBook) {
-        let fetchRequest = ReaderBook.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "id == %@", book.id)
+    func addToWantToRead(_ book: Book) {  // Keep as Book
+        let readerBook = ReaderBook(context: viewContext)
+        readerBook.id = book.id
+        readerBook.title = book.volumeInfo.title
+        readerBook.authors = book.volumeInfo.authors ?? []
+        readerBook.bookDescription = book.volumeInfo.description
+        readerBook.imageURL = book.volumeInfo.imageLinks?.thumbnail?.replacingOccurrences(of: "http://", with: "https://")
+        readerBook.pageCount = Int32(book.volumeInfo.pageCount ?? 0)
+        readerBook.currentPage = 0
+        readerBook.listType = ReadingListType.wantToRead.rawValue
         
-        do {
-            let existingBooks = try viewContext.fetch(fetchRequest)
-            if !existingBooks.isEmpty {
-                errorMessage = "This book is already in your library"
-                showingError = true
-                return
-            }
-            
-            let _ = ReaderBook.from(googleBook: book, context: viewContext, listType: .wantToRead)
-            try viewContext.save()
-            showingSuccess = true
-            
-        } catch {
-            errorMessage = error.localizedDescription
-            showingError = true
-        }
+        try? viewContext.save()
+        showingSuccess = true
     }
     
     private func performSearch() {
@@ -140,7 +129,7 @@ struct HomeView: View {
                 }
                 
                 let (data, _) = try await URLSession.shared.data(from: searchURL)
-                let results = try JSONDecoder().decode(GoogleBookResult.self, from: data)
+                let results = try JSONDecoder().decode(BookResult.self, from: data)  // Changed to BookResult
                 
                 await MainActor.run {
                     books = results.items
@@ -178,7 +167,6 @@ struct QuickAccessButton: View {
         .shadow(radius: 2)
     }
 }
-
 
 #Preview {
     HomeView()
