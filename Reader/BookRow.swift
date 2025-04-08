@@ -20,7 +20,7 @@ struct BookRow: View {
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            // Book cover image
+            /// Book cover image
             if let imageURLString = book.imageURL,
                let imageURL = URL(string: imageURLString) {
                 AsyncImage(url: imageURL) { phase in
@@ -51,7 +51,7 @@ struct BookRow: View {
                     .foregroundColor(.gray)
             }
             
-            // Book details
+            /// Book details
             VStack(alignment: .leading, spacing: 4) {
                 Text(book.title)
                     .font(.headline)

@@ -15,45 +15,56 @@ import CoreData
 
 /// Main view controller for the Reader app that manages the tab-based navigation
 struct ContentView: View {
-    // Add environment object for CoreData
+    /// Added environment object for CoreData
     @Environment(\.managedObjectContext) private var viewContext
     
     var body: some View {
-        // Main tab container that handles switching between different sections of the app
+        /// Main tab container that handles switching between different sections of the app
         TabView {
             // MARK: - Search Tab
             NavigationStack {
-                // HomeView contains the book search functionality
+                /// HomeView contains the book search functionality
                 HomeView()
             }
             .tabItem {
-                // Search icon and label for the first tab
+                /// Search icon and label for the first tab
                 Label("Search", systemImage: "magnifyingglass")
             }
             
             // MARK: - Currently Reading Tab
             NavigationStack {
-                // View for books that are currently being read
+                /// View for books that are currently being read
                 CurrentlyReadingView()
                     .navigationTitle("Currently Reading")
             }
             .tabItem {
-                // Book icon and label for the reading tab
+                /// Book icon and label for the reading tab
                 Label("Reading", systemImage: "book.fill")
             }
             
             // MARK: - Want to Read Tab
             NavigationStack {
-                // View for books that user wants to read in the future
+                /// View for books that user wants to read in the future
                 WantToReadView()
                     .navigationTitle("Want to Read")
             }
             .tabItem {
-                // Bookmark icon and label for the want to read tab
+                /// Bookmark icon and label for the want to read tab
                 Label("Want to Read", systemImage: "bookmark.fill")
             }
+            
+            // MARK: - Info Tab
+            NavigationStack {
+                /// View for book information
+                InfoView()
+                    .navigationTitle("Info")
+            }
+            .tabItem {
+                /// Info icon and label for the info tab
+                Label("Info", systemImage: "info.circle.fill")
+            }
         }
-        // Add the environment modifier at the TabView level so all child views have access
+        /// Add the environment modifier at the TabView level so all child views have access
         .environment(\.managedObjectContext, viewContext)
     }
 }

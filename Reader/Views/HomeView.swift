@@ -14,7 +14,7 @@ import CoreData
 struct HomeView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @State private var searchText = ""
-    @State private var books: [Book] = []  // Keep as Book
+    @State private var books: [Book] = [] 
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showingError = false
@@ -83,7 +83,7 @@ struct HomeView: View {
         }
     }
     
-    func addToCurrentlyReading(_ book: Book) {  // Keep as Book
+    func addToCurrentlyReading(_ book: Book) {
         let readerBook = ReaderBook(context: viewContext)
         readerBook.id = book.id
         readerBook.title = book.volumeInfo.title
@@ -98,7 +98,7 @@ struct HomeView: View {
         showingSuccess = true
     }
     
-    func addToWantToRead(_ book: Book) {  // Keep as Book
+    func addToWantToRead(_ book: Book) {
         let readerBook = ReaderBook(context: viewContext)
         readerBook.id = book.id
         readerBook.title = book.volumeInfo.title

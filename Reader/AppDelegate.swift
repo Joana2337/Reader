@@ -4,7 +4,7 @@ import CloudKit
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Initialize CloudKit
+        /// Initialize CloudKit
         checkCloudKitAvailability()
         return true
     }

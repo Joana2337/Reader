@@ -7,7 +7,7 @@ import Foundation
 import CoreData
 
 @objc(ReaderBook)
-public class ReaderBook: NSManagedObject {
+public class ReaderBook: NSManagedObject, Identifiable {
     @NSManaged public var id: String
     @NSManaged public var title: String
     @NSManaged public var bookDescription: String?
@@ -16,14 +16,17 @@ public class ReaderBook: NSManagedObject {
     @NSManaged public var currentPage: Int32
     @NSManaged public var listType: String
     @NSManaged public var dateAdded: Date?
-    @NSManaged private var authorsData: NSObject?
+    @NSManaged public var authorsString: String?
     
     public var authors: [String] {
         get {
-            return (authorsData as? [String]) ?? []
+            if let authorsString = authorsString, !authorsString.isEmpty {
+                return authorsString.components(separatedBy: ",")
+            }
+            return []
         }
         set {
-            authorsData = newValue as NSObject
+            authorsString = newValue.joined(separator: ",")
         }
     }
     
