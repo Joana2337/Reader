@@ -1,6 +1,6 @@
 
-//  PersistenceController.swift
-//  Reader
+///  PersistenceController.swift
+///  Reader
 ///  Created by Joanne on 3/18/25.
 
 import CoreData
@@ -12,7 +12,7 @@ struct PersistenceController {
     let container: NSPersistentCloudKitContainer
     
     init(inMemory: Bool = false) {
-        container = NSPersistentCloudKitContainer(name: "Reader")
+        container = NSPersistentCloudKitContainer(name: "Reader") ///since am using NSPersistentCloudkit container, the cloudkit have been integrated. Force quitting the application with some books saved should back as it was. 
         
         if inMemory {
             container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")

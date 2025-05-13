@@ -2,7 +2,6 @@
 ///  SearchResultRow.swift
 ///  Reader
 ///  Created by Joanne on 3/18/25.
-
 import SwiftUI
 
 struct SearchResultRow: View {
@@ -12,6 +11,7 @@ struct SearchResultRow: View {
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
+            // Book cover
             if let imageURL = book.volumeInfo.imageLinks?.secureImageURL {
                 AsyncImage(url: imageURL) { phase in
                     switch phase {
@@ -19,86 +19,86 @@ struct SearchResultRow: View {
                         image
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 60, height: 90)
-                    case .failure(_):
+                    case .failure:
                         Image(systemName: "book.fill")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 60, height: 90)
                             .foregroundColor(.gray)
                     case .empty:
-                        ProgressView()
-                            .frame(width: 60, height: 90)
+                        Rectangle()
+                            .foregroundColor(.gray.opacity(0.3))
                     @unknown default:
                         EmptyView()
                     }
                 }
+                .frame(width: 60, height: 90)
+                .cornerRadius(6)
             } else {
-                Image(systemName: "book.fill")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
                     .frame(width: 60, height: 90)
-                    .foregroundColor(.gray)
+                    .cornerRadius(6)
+                    .overlay(
+                        Image(systemName: "book.fill")
+                            .foregroundColor(.white)
+                    )
             }
             
+            // Book details
             VStack(alignment: .leading, spacing: 4) {
                 Text(book.volumeInfo.title)
                     .font(.headline)
+                    .foregroundColor(.white)
                     .lineLimit(2)
                 
                 Text(book.volumeInfo.authorDisplay)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-                
-                if let description = book.volumeInfo.description {
-                    Text(description)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(3)
-                        .padding(.top, 2)
-                }
+                    .foregroundColor(.gray)
                 
                 if let pageCount = book.volumeInfo.pageCount {
                     Text("\(pageCount) pages")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.gray)
                 }
                 
-                HStack {
-                    Button(action: onCurrentlyReading) {
-                        Text("Currently Reading")
+                HStack(spacing: 12) {
+                    Button {
+                        // Using withAnimation to make the tap more responsive
+                        withAnimation {
+                            onCurrentlyReading()
+                        }
+                    } label: {
+                        Label("Reading", systemImage: "book.fill")
+                            .font(.caption)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.blue.opacity(0.3))
+                            .foregroundColor(.blue)
+                            .cornerRadius(8)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(BorderlessButtonStyle()) // - this to prevent tap propagation
                     
-                    Button(action: onWantToRead) {
-                        Text("Want to Read")
+                    Button {
+                        // Using withAnimation to make the tap more responsive
+                        withAnimation {
+                            onWantToRead()
+                        }
+                    } label: {
+                        Label("Want", systemImage: "bookmark.fill")
+                            .font(.caption)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.green.opacity(0.3))
+                            .foregroundColor(.green)
+                            .cornerRadius(8)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(BorderlessButtonStyle()) // -this to prevent tap propagation
                 }
                 .padding(.top, 4)
             }
         }
-        .padding(.vertical, 8)
+        .padding()
+        .background(Color(.systemGray6)) 
+        .cornerRadius(12)
     }
-}
-
-#Preview {
-    SearchResultRow(
-        book: Book(
-            id: "123",
-            volumeInfo: VolumeInfo(
-                title: "Sample Book",
-                authors: ["Author Name"],
-                description: "Sample description that is long enough to demonstrate text wrapping and multiple lines in the description area of the search result row.",
-                imageLinks: ImageLinks(
-                    smallThumbnail: "https://example.com/small.jpg",
-                    thumbnail: "https://example.com/thumbnail.jpg"
-                ),
-                pageCount: 100
-            )
-        ),
-        onCurrentlyReading: {},
-        onWantToRead: {}
-    )
 }

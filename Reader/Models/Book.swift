@@ -28,7 +28,7 @@ struct ImageLinks: Codable {
     let thumbnail: String?
     
     var secureImageURL: URL? {
-        /// Try thumbnail first, then fallback to smallThumbnail
+        /// thumbnails 
         if let thumbnail = thumbnail {
             let secureURL = thumbnail.replacingOccurrences(of: "http://", with: "https://")
             return URL(string: secureURL)

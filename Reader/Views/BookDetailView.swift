@@ -3,91 +3,148 @@
 ///  Reader
 ///  Created by Joanne on 4/8/25.
 
+
 import SwiftUI
 
 struct BookDetailView: View {
-    var book: ReaderBook
+    let book: ReaderBook
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                /// Book image if available
-                if let imageURL = book.imageURL, !imageURL.isEmpty {
-                    AsyncImage(url: URL(string: imageURL)) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(height: 200)
-                                .cornerRadius(8)
-                        case .failure:
-                            Image(systemName: "book.fill")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(height: 200)
-                                .foregroundColor(.gray)
-                        case .empty:
-                            ProgressView()
-                                .frame(height: 200)
-                        @unknown default:
-                            EmptyView()
-                        }
+            VStack(spacing: 20) {
+                // Cover
+                if let imageURL = book.imageURL, let url = URL(string: imageURL) {
+                    AsyncImage(url: url) { image in
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                    } placeholder: {
+                        Rectangle()
+                            .foregroundColor(.gray.opacity(0.5))
                     }
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.bottom, 8)
+                    .frame(width: 150, height: 220)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .shadow(color: Color(.systemGray).opacity(0.5), radius: 5, x: 0, y: 3)
                 }
                 
-                Text(book.title)
-                    .font(.title)
-                    .fontWeight(.bold)
-                    .padding(.bottom, 5)
-                
-                Text("Author(s): \(book.authorDisplay)")
-                    .font(.subheadline)
-                    .padding(.bottom, 5)
-                
-                Text("Number of Pages: \(book.pageCount)")
-                    .font(.subheadline)
-                    .padding(.bottom, 5)
-                
-                if book.listType == "currently_reading" {
-                    Text("Your Progress: \(book.currentPage)/\(book.pageCount) pages")
-                        .font(.subheadline)
-                        .foregroundColor(.blue)
-                        .padding(.bottom, 5)
+                // Title and author
+                VStack(spacing: 8) {
+                    Text(book.title)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .multilineTextAlignment(.center)
+                    
+                    Text("by \(book.authorDisplay)")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                    
+                    // Reading status badge
+                    if book.listType == ReadingListType.currentlyReading.rawValue {
+                        Text("Currently Reading")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 5)
+                            .background(Color.green.opacity(0.2))
+                            .foregroundColor(.green)
+                            .cornerRadius(20)
+                    } else if book.listType == ReadingListType.wantToRead.rawValue {
+                        Text("Want to Read")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 5)
+                            .background(Color.blue.opacity(0.2))
+                            .foregroundColor(.blue)
+                            .cornerRadius(20)
+                    }
                 }
                 
-                Divider()
+                // Progress if currently reading
+                if book.listType == ReadingListType.currentlyReading.rawValue {
+                    VStack(spacing: 8) {
+                        Text("\(Int(book.currentPage)) of \(Int(book.pageCount)) pages")
+                            .font(.subheadline)
+                        
+                        // Enhanced progress bar
+                        ZStack(alignment: .leading) {
+                            Rectangle()
+                                .frame(height: 8)
+                                .foregroundColor(Color(.systemGray5))
+                                .cornerRadius(4)
+                            
+                            Rectangle()
+                                .frame(width: CGFloat(book.currentPage) / CGFloat(book.pageCount) * (UIScreen.main.bounds.width - 40), height: 8)
+                                .foregroundColor(.blue)
+                                .cornerRadius(4)
+                        }
+                        
+                        Text("\(Int(Double(book.currentPage) / Double(book.pageCount) * 100))% complete")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(colorScheme == .dark ? Color(.systemGray6) : Color(.systemGray6))
+                    .cornerRadius(10)
+                }
                 
-                Text("Description:")
-                    .font(.headline)
-                    .padding(.vertical, 5)
+                // Book details card
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Book Details")
+                        .font(.headline)
+                    
+                    Divider()
+                    
+                    // Only using properties we know exist
+                    HStack {
+                        Image(systemName: "book")
+                            .foregroundColor(.secondary)
+                        Text("Pages: \(Int(book.pageCount))")
+                    }
+                                        
+                    HStack {
+                        Image(systemName: "number")
+                            .foregroundColor(.secondary)
+                        Text("ID: \(book.id)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding()
+                .background(colorScheme == .dark ? Color(.systemGray6) : Color(.systemBackground))
+                .cornerRadius(10)
+                .shadow(color: Color(.systemGray).opacity(0.1), radius: 2, x: 0, y: 1)
                 
-                Text(book.bookDescription ?? "No description available")
-                    .font(.body)
-                    .padding(.bottom, 10)
+                // Description if available
+                if let description = book.bookDescription, !description.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Description")
+                            .font(.headline)
+                        
+                        Divider()
+                        
+                        Text(description)
+                            .font(.body)
+                    }
+                    .padding()
+                    .background(colorScheme == .dark ? Color(.systemGray6) : Color(.systemBackground))
+                    .cornerRadius(10)
+                    .shadow(color: Color(.systemGray).opacity(0.1), radius: 2, x: 0, y: 1)
+                }
                 
-                Spacer()
+                Spacer(minLength: 20)
             }
             .padding()
         }
-        .navigationTitle("Book Details")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Done") {
+                    dismiss()
+                }
+            }
+        }
     }
-}
-
-#Preview {
-    let context = PersistenceController.preview.container.viewContext
-    let sampleBook = ReaderBook(context: context)
-    sampleBook.id = UUID().uuidString
-    sampleBook.title = "Sample Book"
-    sampleBook.authorsString = "Author One,Author Two"
-    sampleBook.bookDescription = "This is a sample book description that would typically come from the Google Books API."
-    sampleBook.pageCount = 300
-    sampleBook.currentPage = 75
-    sampleBook.listType = "currently_reading"
-    sampleBook.dateAdded = Date()
-    
-    return BookDetailView(book: sampleBook)
-        .environment(\.managedObjectContext, context)
 }

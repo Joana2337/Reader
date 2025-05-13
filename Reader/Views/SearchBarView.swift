@@ -1,29 +1,42 @@
 
+
+
+
 import SwiftUI
 
 struct SearchBar: View {
     @Binding var text: String
     var onCommit: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         HStack {
             Image(systemName: "magnifyingglass")
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
             
-            TextField("Search books...", text: $text)
-                .onSubmit(onCommit)
+            TextField("Search books by title or author", text: $text, onCommit: onCommit)
+                .foregroundColor(colorScheme == .dark ? .white : .primary)
+                .disableAutocorrection(true)
+                .overlay(
+                    Button(action: {
+                        text = ""
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.secondary)
+                            .opacity(text.isEmpty ? 0 : 1)
+                    }
+                    .padding(.trailing, 8),
+                    alignment: .trailing
+                )
             
-            if !text.isEmpty {
-                Button(action: {
-                    text = ""
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray)
-                }
+            Button(action: onCommit) {
+                Text("Search")
+                    .fontWeight(.medium)
+                    .foregroundColor(.blue)
             }
         }
-        .padding(8)
-        .background(Color(.systemGray6))
+        .padding(10)
+        .background(colorScheme == .dark ? Color(.systemGray6) : Color(.systemGray6))
         .cornerRadius(10)
     }
 }

@@ -1,6 +1,6 @@
 
 /// CurrentlyReadingView displays and manages the user's active reading list
-/// Allows users to track their reading progress for each book
+/// Allows users to track their reading progress for each book they've added to currently reading.
 /// - Created by: Joana
 /// - Date: 2025-03-15
 
@@ -15,15 +15,20 @@ struct CurrentlyReadingView: View {
         predicate: NSPredicate(format: "listType == %@", ReadingListType.currentlyReading.rawValue)
     ) private var books: FetchedResults<ReaderBook>
     
+    @State private var bookForProgress: ReaderBook?
+    @State private var showingProgressSheet = false
+    @State private var bookForInfo: ReaderBook?
+    @State private var showingInfoSheet = false
+    
     var body: some View {
         List {
             ForEach(books, id: \.id) { book in
                 VStack(alignment: .leading) {
                     BookRow(book: book)
                     
-                    /// Add progress section
+                    // Progress section
                     VStack(alignment: .leading) {
-                        ProgressView(value: Double(book.currentPage), total: Double(book.pageCount))
+                        SwiftUI.ProgressView(value: Double(book.currentPage), total: Double(book.pageCount))
                         
                         HStack {
                             Text("Page \(Int(book.currentPage)) of \(Int(book.pageCount))")
@@ -34,11 +39,26 @@ struct CurrentlyReadingView: View {
                         }
                         .font(.caption)
                         
-                        Button("Update Progress") {
-                            /// Show update sheet
-                            updateProgress(for: book)
+                        // ADDED: Both buttons side by side
+                        HStack {
+                            // Update Progress button
+                            Button("Update Progress") {
+                                bookForProgress = book
+                                showingProgressSheet = true
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(.blue)
+                            
+                            // Info button
+                            Button {
+                                bookForInfo = book
+                                showingInfoSheet = true
+                            } label: {
+                                Label("Info", systemImage: "info.circle.fill")
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(.purple)
                         }
-                        .buttonStyle(.bordered)
                     }
                     .padding(.top, 8)
                 }
@@ -51,29 +71,17 @@ struct CurrentlyReadingView: View {
                 EditButton()
             }
         }
-    }
-    
-    private func updateProgress(for book: ReaderBook) {
-        /// Show an alert to update progress
-        let alert = UIAlertController(title: "Update Progress", message: "Enter current page:", preferredStyle: .alert)
-        alert.addTextField { textField in
-            textField.keyboardType = .numberPad
-            textField.text = String(Int(book.currentPage))
-        }
-        
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Update", style: .default) { _ in
-            if let text = alert.textFields?.first?.text,
-               let page = Int(text) {
-                book.currentPage = Int32(min(max(0, page), Int(book.pageCount)))
-                try? viewContext.save()
+        //Progress sheet
+        .sheet(isPresented: $showingProgressSheet) {
+            if let book = bookForProgress {
+                PageProgressView(book: book, viewContext: viewContext)
             }
-        })
-        
-        /// Present the alert
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let viewController = windowScene.windows.first?.rootViewController {
-            viewController.present(alert, animated: true)
+        }
+        // ADDED: Info sheet
+        .sheet(isPresented: $showingInfoSheet) {
+            if let book = bookForInfo {
+                BookDetailView(book: book)
+            }
         }
     }
     
@@ -85,9 +93,10 @@ struct CurrentlyReadingView: View {
     }
 }
 
-#Preview {
-    NavigationView {
-        CurrentlyReadingView()
-            .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-    }
-}
+
+//#Preview {
+//    NavigationView {
+//        CurrentlyReadingView()
+//            .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+//    }
+//}

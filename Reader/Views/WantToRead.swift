@@ -1,7 +1,7 @@
 
-//  WantToRead.swift
-//  Reader
-//  Created by Joanne on 3/15/25.
+///  WantToRead.swift
+///  Reader
+///  Created by Joanne on 3/15/25.
 
 import SwiftUI
 import CoreData
@@ -40,11 +40,12 @@ struct WantToReadView: View {
     }
 }
 
-struct WantToReadView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationView {
-            WantToReadView()
-                .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
-        }
-    }
-}
+
+//struct WantToReadView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        NavigationView {
+//            WantToReadView()
+//                .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+//        }
+//    }
+//}

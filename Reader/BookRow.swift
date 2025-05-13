@@ -3,7 +3,7 @@
 //  Reader
 //  Created by Joanne on 3/18/25.
 
-import SwiftUI
+
 import SwiftUI
 
 struct BookRow: View {
@@ -37,7 +37,8 @@ struct BookRow: View {
                             .frame(width: 60, height: 90)
                             .foregroundColor(.gray)
                     case .empty:
-                        ProgressView()
+                        //Added SwiftUI namespace to avoid naming conflict
+                        SwiftUI.ProgressView()
                             .frame(width: 60, height: 90)
                     @unknown default:
                         EmptyView()
@@ -113,20 +114,4 @@ struct BookRow: View {
     }
 }
 
-struct BookRow_Previews: PreviewProvider {
-    static var previews: some View {
-        let context = PersistenceController.preview.container.viewContext
-        let book = ReaderBook(context: context)
-        book.id = "test_id"
-        book.title = "Sample Book"
-        book.authors = ["John Doe"]
-        book.pageCount = 300
-        book.currentPage = 150
-        book.imageURL = nil
-        book.listType = ReadingListType.currentlyReading.rawValue
-        book.dateAdded = Date()
-        
-        return BookRow(book: book)
-            .environment(\.managedObjectContext, context)
-    }
-}
+

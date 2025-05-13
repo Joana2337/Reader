@@ -1,7 +1,9 @@
 # Xcode
+## User settings
 xcuserdata/
-*.xcscmblueprint
-*.xccheckout
 
-# API Keys
+## API Keys - cover all variations
+APIKey.swift
 APIKeys.swift
+**/APIKey.swift
+**/APIKeys.swift
